@@ -139,8 +139,19 @@ export async function handleCrmProxy(req) {
 
   const base = (cfg.crmBaseUrl || "").replace(/\/+$/, "");
   const target = new URL(base + stripped);
-  // Carry over query string.
-  url.searchParams.forEach((v, k) => target.searchParams.set(k, v));
+
+  // Carry over query string, excluding "path" — the vercel.json rewrite
+  // (source: /api/crm/:path*, destination: /api/crm-proxy) auto-appends the
+  // unused wildcard segment as a "?path=..." query param on the underlying
+  // request. Confirmed via live proxy debug logs: GHL rejects any
+  // unrecognized query param on the search endpoint with a 422
+  // "property path should not exist", which this was silently causing.
+  const INTERNAL_QUERY_PARAMS = new Set(["path"]);
+  url.searchParams.forEach((v, k) => {
+    if (!INTERNAL_QUERY_PARAMS.has(k)) {
+      target.searchParams.set(k, v);
+    }
+  });
 
   // Inject locationId as a query param for GET, PUT, and PATCH — confirmed
   // against the live CRM. POST wants it in the body instead (below). DELETE
@@ -204,8 +215,6 @@ export async function handleCrmProxy(req) {
       }
     }
   }
-
-  console.log("[CRM PROXY DEBUG]", req.method, target.toString(), "BODY:", body);
 
   let upstream;
   try {
