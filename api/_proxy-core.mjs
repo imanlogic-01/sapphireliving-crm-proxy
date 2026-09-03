@@ -235,8 +235,16 @@ export async function handleCrmProxy(req) {
     invalidateToken();
   }
 
-  // Forward the CRM response unchanged, adding CORS headers.
+  // Forward the CRM response, adding CORS headers. fetch() already
+  // transparently decompressed the body, but upstream.headers still reports
+  // the original Content-Encoding (and a now-wrong Content-Length) from GHL.
+  // Forwarding those stale headers alongside the already-decompressed body
+  // makes the browser try to re-decompress plain data and fail with
+  // ERR_CONTENT_DECODING_FAILED. Strip both so the browser trusts the actual
+  // bytes it receives.
   const respHeaders = new Headers(upstream.headers);
+  respHeaders.delete("content-encoding");
+  respHeaders.delete("content-length");
   Object.entries(corsHeaders(req.headers.get("origin") || undefined)).forEach(
     ([k, v]) => respHeaders.set(k, v),
   );
