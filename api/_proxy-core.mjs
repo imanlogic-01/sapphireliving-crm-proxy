@@ -204,11 +204,9 @@ export async function handleCrmProxy(req) {
       }
     }
   }
+
   console.log("[CRM PROXY DEBUG]", req.method, target.toString(), "BODY:", body);
 
-  let upstream;
-  try {
-    upstream = await fetch(target.toString(), {
   let upstream;
   try {
     upstream = await fetch(target.toString(), {
