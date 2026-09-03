@@ -17,12 +17,12 @@
 // (tenancies carry goCardlessMandateId / goCardlessPaymentId).
 //
 // SIGNATURE VERIFICATION:
-//   If a `gocardlessWebhookSecret` is configured (api/crm.config.json or env),
-//   the GoCardless `Webhook-Signature` header (t=...,v1=...) is verified with
-//   HMAC-SHA256. If no secret is configured, verification is skipped so the
-//   endpoint works in development. In production, SET THE SECRET.
+//   If a `gocardlessWebhookSecret` is configured (env var), the GoCardless
+//   `Webhook-Signature` header (t=...,v1=...) is verified with HMAC-SHA256.
+//   If no secret is configured, verification is skipped so the endpoint works
+//   in development. In production, SET THE SECRET.
 //
-// This module is plain ESM JS — runs in Node / Vite middleware / serverless.
+// This module is plain ESM JS — runs in Node / serverless.
 // In-memory only: on a serverless cold start the buffer resets. For durable
 // history, persist to the CRM (a future enhancement); the live CRM of record
 // remains the source of truth for tenancy/payment state.

@@ -10,73 +10,39 @@
 //      short-lived access token via the OAuth token endpoint. Tokens are
 //      cached in-memory and auto-refreshed ~60s before expiry.
 //
-// Credentials are read from the server-side config file (api/crm.config.json)
-// and/or environment variables ONLY — never from the frontend. No secret is
-// ever logged or sent to the browser.
+// Credentials are read from environment variables ONLY in this deployment —
+// never from the frontend, and there is no checked-in config file. No secret
+// is ever logged or sent to the browser.
 //
-// This module runs server-side (Node / Vite middleware / serverless). It is
-// plain ESM JS so it imports cleanly from api/_proxy-core.mjs.
+// This module runs server-side (Node / serverless). It is plain ESM JS so it
+// imports cleanly from api/_proxy-core.mjs.
 // ============================================================================
-
-import { readFileSync } from "node:fs";
-import { fileURLToPath } from "node:url";
-import { dirname, join } from "node:path";
 
 let cachedConfig = null;
 
 /**
- * Load the server-side CRM config. Resolution order:
- *   1. process.env overrides (CRM_BASE_URL, CRM_API_KEY, LOCATION_ID, etc.)
- *      — supported for hosts that inject env vars instead of a config file.
- *   2. api/crm.config.json (the recommended, gitignored config file).
- *
+ * Load the server-side CRM config from environment variables only.
  * The config (and especially any token/secret) is held only in server memory.
  */
 export function loadCrmConfig() {
   if (cachedConfig) return cachedConfig;
 
-  let fileConfig = {};
-  try {
-    const here = dirname(fileURLToPath(import.meta.url));
-    const cfgPath = join(here, "crm.config.json");
-    const raw = readFileSync(cfgPath, "utf8");
-    fileConfig = JSON.parse(raw);
-  } catch {
-    // No config file present — fall back to env vars only.
-  }
-
-  const oauth = fileConfig.oauth ?? {};
-
   cachedConfig = {
-    authMode:
-      process.env.CRM_AUTH_MODE || fileConfig.authMode || "static-token",
+    authMode: process.env.CRM_AUTH_MODE || "static-token",
     staticToken:
-      process.env.CRM_STATIC_TOKEN ||
-      process.env.CRM_API_KEY ||
-      fileConfig.staticToken ||
-      "",
-    crmBaseUrl:
-      process.env.CRM_BASE_URL || fileConfig.crmBaseUrl || "",
-    tokenUrl:
-      process.env.CRM_TOKEN_URL || fileConfig.tokenUrl || "",
-    locationId:
-      process.env.LOCATION_ID || fileConfig.locationId || "",
-    clientId:
-      process.env.CRM_CLIENT_ID || oauth.clientId || "",
-    clientSecret:
-      process.env.CRM_CLIENT_SECRET || oauth.clientSecret || "",
-    scope: process.env.CRM_SCOPE || oauth.scope || "",
-    apiVersion:
-      process.env.CRM_API_VERSION || fileConfig.apiVersion || "",
-    allowedOrigin:
-      process.env.CRM_ALLOWED_ORIGIN || fileConfig.allowedOrigin || "*",
+      process.env.CRM_STATIC_TOKEN || process.env.CRM_API_KEY || "",
+    crmBaseUrl: process.env.CRM_BASE_URL || "",
+    tokenUrl: process.env.CRM_TOKEN_URL || "",
+    locationId: process.env.LOCATION_ID || "",
+    clientId: process.env.CRM_CLIENT_ID || "",
+    clientSecret: process.env.CRM_CLIENT_SECRET || "",
+    scope: process.env.CRM_SCOPE || "",
+    apiVersion: process.env.CRM_API_VERSION || "",
+    allowedOrigin: process.env.CRM_ALLOWED_ORIGIN || "*",
     // Optional GoCardless webhook signing secret (for verifying
     // Webhook-Signature headers on POST /api/crm/webhook). If unset,
     // signature verification is skipped — set it in production.
-    gocardlessWebhookSecret:
-      process.env.GOCARDLESS_WEBHOOK_SECRET ||
-      fileConfig.gocardlessWebhookSecret ||
-      "",
+    gocardlessWebhookSecret: process.env.GOCARDLESS_WEBHOOK_SECRET || "",
   };
 
   return cachedConfig;
