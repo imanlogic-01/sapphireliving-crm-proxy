@@ -1,0 +1,7 @@
+{
+  "authMode": "static-token",
+  "staticToken": "pit-52e1758b-f84f-4fdc-bae6-4a35b53a6d9a",
+  "crmBaseUrl": "https://services.leadconnectorhq.com",
+  "locationId": "eYjGBfaHvpUt488Ub3EI",
+  "apiVersion": "2021-07-28"
+}
